@@ -1,0 +1,56 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Mar 18 13:23:12 2026
+
+@author: Brandon
+"""
+
+import socketio
+import asyncio
+
+# Client -- no FastAPI usage here
+
+sio = socketio.AsyncClient()
+
+user = ""
+roomID = "unset"
+    
+async def connectToRoom(RID, UID):
+    """Connect to room ID with given username. RID and UID should be strings.
+    
+       The RID cannot be set as \"unset\", but is flexible otherwise."""
+    global roomID, user
+    if (not (roomID == "unset") or RID == "unset"):
+        raise Exception("User is already in a room")
+    user = UID
+    roomID = RID
+    # updateInfo is sent so the server saves the roomID with the SID of the client
+    # The server will add that SID and username to the room
+    await sio.emit("updateInfo", {"room": roomID, "user": user})
+    await sio.emit("message", {"text": f"{user} has joined the room"})
+
+async def leaveRoom():
+    """Leaves the room the client is in."""
+    global roomID, user
+    await sio.emit("message", {"text": f"{user} has left the room"})
+    await sio.emit("updateInfo", {"room": "unset", "user": ""})
+    roomID = "unset"
+    user = ""
+    
+async def sendToRoom(message):
+    """Send message to room. Should be called whenever client submits a message.
+    
+       Already formatted to display as Username: Message"""
+    if (roomID == "unset"):
+        raise Exception("User is not in a room")
+    await sio.emit("message", {"text": f"{user}: {message}"})
+    
+@sio.event
+async def message(data):
+    print(data)
+    
+async def main():
+    await sio.connect("http://localhost:8000")
+    await sio.wait()
+
+asyncio.run(main())
