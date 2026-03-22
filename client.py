@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Mar 18 13:23:12 2026
-
-@author: Brandon
-"""
-
 import socketio
 import asyncio
 
