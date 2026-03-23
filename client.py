@@ -3,6 +3,11 @@ import asyncio
 
 # Client -- no FastAPI usage here
 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# I have to port this to JS. Work with the server for now.
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
 sio = socketio.AsyncClient()
 
 user = ""
@@ -10,17 +15,25 @@ roomID = "unset"
     
 async def connectToRoom(RID, UID):
     """Connect to room ID with given username. RID and UID should be strings.
+       Will return True if successful and False if unsuccessful.
     
        The RID cannot be set as \"unset\", but is flexible otherwise."""
     global roomID, user
     if (not (roomID == "unset") or RID == "unset"):
-        raise Exception("User is already in a room")
-    user = UID
+        return False
+    
+    # Check for username validity - if username taken, server adds "(+)" to username
+    try:
+        user = await sio.call("validate", {"room": RID, "user": UID})
+    except TimeoutError:
+        return False
+
     roomID = RID
     # updateInfo is sent so the server saves the roomID with the SID of the client
     # The server will add that SID and username to the room
     await sio.emit("updateInfo", {"room": roomID, "user": user})
     await sio.emit("message", {"text": f"{user} has joined the room"})
+    return True;
 
 async def leaveRoom():
     """Leaves the room the client is in."""

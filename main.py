@@ -4,8 +4,8 @@ from fastapi import FastAPI
 # I'll be honest, no idea if this next import is necessary, but it seems useful
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"])
+fastAPIApp = FastAPI()
+fastAPIApp.add_middleware(CORSMiddleware, allow_origins=["*"])
 
 # Dict which stores Socket ID as key and [room, username] as value
 SIDDataTracker = {}
@@ -14,9 +14,9 @@ roomUserTracker = {}
 
 sessionID = socketio.AsyncServer(async_mode = 'asgi', cors_allowed_origins='*')
 
-socket_app = socketio.ASGIApp(sessionID, app)
+app = socketio.ASGIApp(sessionID, fastAPIApp)
 
-
+# TODO: Still needs to serve a webpage. When you have it done, put it here.
 
 @sessionID.event
 async def connect(sid, environ):
@@ -28,9 +28,13 @@ async def connect(sid, environ):
 async def disconnect(sid):
     """Normal disconnect, but also removes info from tracker arrays."""
     global SIDDataTracker, roomUserTracker
+    room = SIDDataTracker[sid][0]
+    user = SIDDataTracker[sid][1]
     if not (SIDDataTracker[sid][0] == "unset"):
-        user = SIDDataTracker[sid][1]
-        roomUserTracker[SIDDataTracker[sid][0]].remove(user)
+        await sessionID.emit("message", f"{user} has left the room", to=room)
+        roomUserTracker[room].remove(user)
+        if not roomUserTracker[room]:
+            del roomUserTracker[room]
     del SIDDataTracker[sid]
     
 
@@ -49,6 +53,8 @@ async def updateInfo(sid, data):
     if not (SIDDataTracker[sid][0] == "unset"):
         await sessionID.leave_room(sid, SIDDataTracker[sid][0])
         roomUserTracker[SIDDataTracker[sid][0]].remove(SIDDataTracker[sid][1])
+        if not roomUserTracker[SIDDataTracker[sid][0]]:
+            del roomUserTracker[SIDDataTracker[sid][0]]
         
     SIDDataTracker.update({sid: [data["room"], data["user"]]})
     
@@ -59,3 +65,10 @@ async def updateInfo(sid, data):
             roomUserTracker[data["room"]] = [data["user"]]
             
         await sessionID.enter_room(sid, data["room"])
+
+@sessionID.event
+async def validate(sid, data):
+    if data["user"] in roomUserTracker.get(data["room"], []):
+        return await validate(sid, {"room": data["room"], "user": data["user"] + "(+) "})
+    else:
+        return data["user"]
