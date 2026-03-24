@@ -1,17 +1,17 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:        #0d0f14;
-  --surface:   #13161e;
-  --border:    #1f2433;
-  --accent:    #5cffb0;
-  --accent2:   #3b82f6;
-  --text:      #e8eaf0;
-  --muted:     #5a6070;
-  --danger:    #ff5c7a;
-  --msg-self:  #17263a;
+  --bg: #0d0f14;
+  --surface: #13161e;
+  --border: #1f2433;
+  --accent: #910933;
+  --accent2: #3b82f6;
+  --text: #e8eaf0;
+  --muted: #5a6070;
+  --danger: #ff5c7a;
+  --msg-self: #17263a;
   --msg-other: #151a24;
-  --radius:    12px;
+  --radius: 12px;
   --font-head: 'Syne', sans-serif;
   --font-mono: 'DM Mono', monospace;
 }
@@ -139,8 +139,8 @@ body::before {
 }
 
 .btn-join:hover {
-  background: #7fffbf;
-  box-shadow: 0 0 24px rgba(92,255,176,0.25);
+  background: #f31b1b;
+  box-shadow: 0 0 24px rgb(237, 8, 46);
 }
 
 .btn-join:active { transform: scale(0.98); }
@@ -152,16 +152,14 @@ body::before {
   box-shadow: none;
 }
 
-/* ══════════════════════════════════════
-   CHAT SCREEN
-══════════════════════════════════════ */
+/* Chat Screen */
 #chat-screen {
   display: none;
   flex-direction: column;
   height: 100vh;
 }
 
-/* ── HEADER ── */
+/* Header */
 .chat-header {
   display: flex;
   align-items: center;
@@ -335,8 +333,8 @@ body::before {
 }
 
 .btn-send:hover {
-  background: #7fffbf;
-  box-shadow: 0 0 20px rgba(92,255,176,0.3);
+  background: #db1434;
+  box-shadow: 0 0 20px rgb(145, 9, 51);
 }
 
 .btn-send:active { transform: scale(0.95); }

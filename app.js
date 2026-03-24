@@ -1,4 +1,4 @@
-//UI logic for the chat interface
+//UI logic for the chat interface; CSS/HTML application
 
 function showError(msg) {
   const errorLog = document.getElementById("join-error");

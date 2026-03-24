@@ -12,9 +12,9 @@ fastAPIApp.add_middleware(CORSMiddleware, allow_origins=["*"])
 #serves static files (JS, CSS, HTML) from the /static folder
 fastAPIApp.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Dict which stores Socket ID as key and [room, username] as value
+# Dict which stores Socket ID as key and [room, username] as value -> [roomid, username]
 SIDDataTracker = {}
-# Dict which stores existing usernames in a room
+# Dict which stores existing usernames in a room -> [Bob, John, Bill]
 roomUserTracker = {}
 
 sessionID = socketio.AsyncServer(async_mode = 'asgi', cors_allowed_origins='*')
@@ -23,12 +23,14 @@ app = socketio.ASGIApp(sessionID, fastAPIApp)
 
 # TODO: Still needs to serve a webpage. When you have it done, put it here.
 
+#waits for client connection and registers them with a placeholder value -> SIDDataTracker[sid] = [unset, ""(empty username)]
 @sessionID.event
 async def connect(sid, environ):
     """Normal connect, but also adds info to tracker array."""
     global SIDDataTracker
     SIDDataTracker[sid] = ["unset", ""]
 
+#cleans up when a user client disconnects, also broadcasts a message saying that they have left the room
 @sessionID.event
 async def disconnect(sid):
     """Normal disconnect, but also removes info from tracker arrays."""
@@ -37,11 +39,11 @@ async def disconnect(sid):
     user = SIDDataTracker[sid][1]
     if not (SIDDataTracker[sid][0] == "unset"):
         await sessionID.emit("message", f"{user} has left the room", to=room)
+        #deletes user and deletes room (if no ones left)
         roomUserTracker[room].remove(user)
         if not roomUserTracker[room]:
             del roomUserTracker[room]
     del SIDDataTracker[sid]
-
 
 @sessionID.event
 async def message(sid, data):
@@ -49,6 +51,7 @@ async def message(sid, data):
     global SIDDataTracker
     if (SIDDataTracker[sid][0] == "unset"):
         raise Exception("User is not in a room")
+    #to= indicates the room
     await sessionID.emit("message", data["text"], to=SIDDataTracker[sid][0])
 
 @sessionID.event
@@ -71,6 +74,7 @@ async def updateInfo(sid, data):
 
         await sessionID.enter_room(sid, data["room"])
 
+#pretty simple, checks if the username is a duplicate; adds a "+" after their username if not
 @sessionID.event
 async def validate(sid, data):
     if data["user"] in roomUserTracker.get(data["room"], []):
