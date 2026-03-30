@@ -1,7 +1,9 @@
 import socketio
+from pathlib import Path
+
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 # I'll be honest, no idea if this next import is necessary, but it seems useful
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,8 +11,10 @@ from fastapi.middleware.cors import CORSMiddleware
 fastAPIApp = FastAPI()
 fastAPIApp.add_middleware(CORSMiddleware, allow_origins=["*"])
 
-#serves static files (JS, CSS, HTML) from the /static folder
-fastAPIApp.mount("/static", StaticFiles(directory="static"), name="static")
+BASE_DIR = Path(__file__).resolve().parent
+
+# Serves the JS/CSS assets that currently live in the project root.
+fastAPIApp.mount("/static", StaticFiles(directory=BASE_DIR), name="static")
 
 # Dict which stores Socket ID as key and [room, username] as value -> [roomid, username]
 SIDDataTracker = {}
@@ -21,7 +25,9 @@ sessionID = socketio.AsyncServer(async_mode = 'asgi', cors_allowed_origins='*')
 
 app = socketio.ASGIApp(sessionID, fastAPIApp)
 
-# TODO: Still needs to serve a webpage. When you have it done, put it here.
+@fastAPIApp.get("/")
+async def read_index():
+    return FileResponse(BASE_DIR / "index.html")
 
 #waits for client connection and registers them with a placeholder value -> SIDDataTracker[sid] = [unset, ""(empty username)]
 @sessionID.event
